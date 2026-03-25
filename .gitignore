@@ -1,0 +1,18 @@
+# Large media files (originals, posters, mp4 conversions)
+media/
+
+# Staging folder for new media
+add-media/
+
+# Python virtual environment
+.venv/
+
+# Google API credentials and tokens
+credentials.json
+token.json
+
+# Python cache
+__pycache__/
+
+# OS files
+.DS_Store

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#1a1a2e"/>
+  <g transform="translate(4, 3) scale(0.75)">
+    <!-- Ticket shape -->
+    <rect x="2" y="6" width="28" height="20" rx="3" fill="none" stroke="#d4a037" stroke-width="2"/>
+    <!-- Ticket notches -->
+    <circle cx="2" cy="16" r="3" fill="#1a1a2e" stroke="#d4a037" stroke-width="2"/>
+    <circle cx="30" cy="16" r="3" fill="#1a1a2e" stroke="#d4a037" stroke-width="2"/>
+    <!-- Dotted tear line -->
+    <line x1="10" y1="8" x2="10" y2="24" stroke="#d4a037" stroke-width="1" stroke-dasharray="2,2"/>
+    <!-- Music note -->
+    <circle cx="19" cy="19" r="2.5" fill="#d4a037"/>
+    <line x1="21.5" y1="19" x2="21.5" y2="10" stroke="#d4a037" stroke-width="1.5"/>
+    <path d="M21.5 10 Q25 9 24 12" fill="#d4a037"/>
+  </g>
+</svg>

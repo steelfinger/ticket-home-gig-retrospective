@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket Home — Concert Travels from Helsinki</title>
+  <meta name="description" content="A personal retrospective of international concerts and festivals, traveling from Helsinki to stages across Europe and beyond.">
+  <meta property="og:title" content="Ticket Home — Concert Travels from Helsinki">
+  <meta property="og:description" content="37 gigs across 8 countries. From Alabama Shakes in Berlin to Mumford & Sons in Hyde Park — a decade of traveling for live music.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ticket-home.free.nf/">
+  <meta property="og:image" content="https://ticket-home.free.nf/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ticket Home — Concert Travels from Helsinki">
+  <meta name="twitter:description" content="37 gigs across 8 countries. From Alabama Shakes in Berlin to Mumford & Sons in Hyde Park — a decade of traveling for live music.">
+  <meta name="twitter:image" content="https://ticket-home.free.nf/og-image.jpg">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-card: #14141f;
+      --bg-card-hover: #1a1a2a;
+      --amber: #e8a838;
+      --amber-dim: #c4862a;
+      --amber-glow: rgba(232, 168, 56, 0.15);
+      --text-primary: #f0ece4;
+      --text-secondary: #9a9590;
+      --text-muted: #5a5550;
+      --accent-blue: #4a7fb5;
+      --border: #2a2a35;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    /* ── Hero & Map ── */
+    #hero {
+      position: relative;
+      height: 100vh;
+      min-height: 600px;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 60px 40px 40px;
+      background: linear-gradient(transparent, rgba(10,10,15,0.85) 40%, var(--bg-dark));
+      pointer-events: none;
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      font-weight: 300;
+      color: var(--text-secondary);
+      margin-top: 12px;
+      max-width: 600px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 30px;
+      pointer-events: auto;
+    }
+
+    .stat {
+      text-align: left;
+    }
+
+    .stat-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    /* ── Timeline ── */
+    .timeline {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 20px;
+    }
+
+    .timeline-year {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      color: var(--amber-dim);
+      margin: 80px 0 30px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .timeline-year:first-child {
+      margin-top: 0;
+    }
+
+    /* ── Event Card ── */
+    .event-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 50px;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .event-card:hover {
+      border-color: var(--amber-dim);
+    }
+
+    .event-header {
+      padding: 30px 35px 20px;
+    }
+
+    .event-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .event-date {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .event-distance {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .event-distance::before {
+      content: '✈';
+      font-size: 0.9rem;
+    }
+
+    .event-country {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      background: rgba(255,255,255,0.05);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .event-artist {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .event-support {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .event-venue {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Media Gallery ── */
+    .event-media {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 4px;
+      padding: 0 4px;
+      overflow: hidden;
+    }
+
+    .event-media img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      cursor: pointer;
+      transition: transform 0.3s, filter 0.3s;
+    }
+
+    .event-media img:hover {
+      transform: scale(1.03);
+      filter: brightness(1.1);
+    }
+
+    .event-media .video-container {
+      position: relative;
+      aspect-ratio: 16/9;
+    }
+
+    .event-media .video-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .event-media .video-poster {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .event-media .video-poster img {
+      aspect-ratio: 16/9;
+    }
+
+    .event-media .video-poster .play-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .event-media .video-poster .play-badge::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 12px 0 12px 22px;
+      border-color: transparent transparent transparent white;
+      margin-left: 4px;
+    }
+
+    .event-media .video-poster .upload-pending {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.7);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── Text Sections ── */
+    .event-body {
+      padding: 25px 35px 35px;
+    }
+
+    .event-section {
+      margin-bottom: 25px;
+    }
+
+    .event-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .event-section h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--amber);
+      margin-bottom: 10px;
+      font-weight: 400;
+    }
+
+    .event-section p {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.75;
+    }
+
+    .event-section .edit-hint {
+      display: none;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 6px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 60px 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer .footer-quote {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+
+    /* ── Lightbox ── */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.92);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    /* ── Video Modal ── */
+    .video-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.92);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .video-modal.active {
+      display: flex;
+    }
+
+    .video-modal .video-modal-inner {
+      position: relative;
+      cursor: default;
+    }
+
+    .video-modal .video-modal-inner iframe {
+      display: block;
+      border: none;
+      border-radius: 4px;
+    }
+
+    /* ── Filters ── */
+    .filters {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 30px 20px 0;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      background: var(--bg-dark);
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filters select {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      padding: 8px 32px 8px 12px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239a9590' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      cursor: pointer;
+      min-width: 140px;
+    }
+
+    .filters select:focus {
+      outline: none;
+      border-color: var(--amber);
+    }
+
+    .filters select.active-filter {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .filters button {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      padding: 8px 16px;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filters button:hover {
+      color: var(--amber);
+      border-color: var(--amber);
+    }
+
+    .event-card.hidden {
+      display: none;
+    }
+
+    .timeline-year.hidden {
+      display: none;
+    }
+
+    .filter-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .hero-overlay { padding: 40px 20px 30px; }
+      .hero-stats { gap: 24px; }
+      .stat-number { font-size: 1.6rem; }
+      .event-header { padding: 20px; }
+      .event-body { padding: 20px; }
+      .event-media { grid-template-columns: 1fr; }
+      .event-artist { font-size: 1.5rem; }
+    }
+
+    /* ── Leaflet overrides ── */
+    .leaflet-container { background: #0a0a0f; }
+    .home-pulse {
+      width: 16px; height: 16px;
+      background: var(--amber);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--amber), 0 0 30px rgba(232,168,56,0.4);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.7; }
+    }
+    .venue-dot {
+      width: 8px; height: 8px;
+      background: var(--text-primary);
+      border-radius: 50%;
+      border: 1px solid var(--amber-dim);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .venue-dot:hover {
+      transform: scale(1.8);
+      background: var(--amber);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero with Map -->
+  <section id="hero">
+    <div id="map"></div>
+    <div class="hero-overlay">
+      <h1 class="hero-title">Ticket Home</h1>
+      <p class="hero-subtitle">Concert travels from Helsinki — because sometimes you have to go far to feel close to something.</p>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-number" id="stat-gigs">35</div>
+          <div class="stat-label">Gigs Abroad</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="stat-countries">8</div>
+          <div class="stat-label">Countries</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="stat-cities">12</div>
+          <div class="stat-label">Cities</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <div class="filters" id="filters">
+    <select id="filter-year"><option value="">All Years</option></select>
+    <select id="filter-artist"><option value="">All Artists</option></select>
+    <select id="filter-city"><option value="">All Cities</option></select>
+    <button id="filter-reset">Show All</button>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline" id="timeline"></div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-quote">"Let me be your ticket home"</div>
+    <p>A personal retrospective by Tero Aarnio. Helsinki → everywhere the music plays.</p>
+  </footer>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="this.classList.remove('active')">
+    <img id="lightbox-img" src="" alt="">
+  </div>
+
+  <!-- Video Modal -->
+  <div class="video-modal" id="video-modal" onclick="closeVideoModal()">
+    <div class="video-modal-inner" id="video-modal-inner" onclick="event.stopPropagation()"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ═══════════════════════════════════════════
+    // DATA
+    // ═══════════════════════════════════════════
+
+    const HELSINKI = [60.17, 24.94];
+
+    const YOUTUBE_IDS = {
+      "01 Apr 2022 02": "tJcnRwBLqpE",
+      "01 Apr 2022 04": "n5T8hygG47Y",
+      "03 Oct 2019 02": "-8GVTSfJYC0",
+      "04 Nov 2017 01": "tSldBopsYLI",
+      "04 Oct 2019 01": "9GLBa4MbcPw",
+      "05 Nov 2012 01": "aOVoisAiHJ4",
+      "05 Oct 2019 01": "C3nYejksrxw",
+      "06 Apr 2022 01": "o2sb8lpl7Bg",
+      "06 Nov 2012 01": "xc13POC4-mg",
+      "06 Nov 2022 02": "-2T9MCi309I",
+      "06 Oct 2019 02": "5FYyACe6qIY",
+      "07 May 2016 02": "bKxQe7Xu3LY",
+      "07 Nov 2022 01": "ovd1xaaXU6g",
+      "07 Nov 2025 01": "eVQ5m2DrmWY",
+      "08 Apr 2019 02": "Am5WpdkEmhY",
+      "08 Apr 2022 02": "JqzvhAy_EQc",
+      "08 Apr 2022 03": "aZxhJLbgbmo",
+      "08 Oct 2019 03": "VC6UngIaqSg",
+      "08 Oct 2019 04": "NkeeMpsZvWw",
+      "09 Nov 2025 01": "S0MNOokDoHs",
+      "09 Nov 2025 02": "anaQ5TQirkw",
+      "10 Nov 2025 01": "Ls62qXalkCg",
+      "10 Nov 2025 02": "Nd0VuXN9_bw",
+      "11 Feb 2012 01": "1x881APIIro",
+      "11 Feb 2012 02": "ltb4CXH9oPk",
+      "12 Nov 2025 02": "rK63h2h4fg4",
+      "13 Nov 2025 02": "vjACROAtliA",
+      "16 Jul 2024 02": "2tDBUFjOGzQ",
+      "16 Jul 2024 03": "KxqksN1b96o",
+      "16 Oct 2018 01": "KaX40nNdSOA",
+      "18 Nov 2023 01": "WqYgl44-5uA",
+      "18 Nov 2023 02": "XlsG9c8OAeA",
+      "19 Jun 2022 01": "W9OgahCLi4k",
+      "19 Jun 2022 02": "0D1OrshoI5Y",
+      "20 Jul 2022 02": "e7PrBA2zWuY",
+      "20 Mar 2019 01": "Wc3JWVdQAOY",
+      "23 May 2019 01": "nApKBLz-dVE",
+      "30 mar 2018 03": "pZ09BgQjewM",
+      "31 May 2023 01": "SAJEgn4D9YQ",
+      "31 May 2023 02": "MeANyVGheA8",
+      "31 May 2023 03": "I5HlG9s_0XY",
+      "08 Jul 2016 02": "tGHd9hmLDuA",
+      "08 Jul 2016 03": "oYK9893R9Gk",
+      "08 Jul 2016 04": "OXtfiyf7TIU",
+      "30 Nov 2016 02": "wxNkEUxbWrA",
+      "09 Nov 2024 01": "8inU9SCnLw4",
+      "07 Mar 2025 02": "75y5z7gW9EM",
+      "07 Mar 2025 03": "uj2NK3UVh5g"
+    };
+
+    const GIGS = [
+      {
+        id: "2012-02-11",
+        date: "11 Feb 2012",
+        artist: "The Black Keys",
+        support: "",
+        venue: "Alexandra Palace",
+        city: "London",
+        country: "UK",
+        coords: [51.60, -0.13],
+        distance: 1827,
+        images: ["11 Feb 2012 03"],
+        videos: ["11 Feb 2012 01", "11 Feb 2012 02"],
+        artistInfo: "The Black Keys were touring behind <em>El Camino</em>, released just two months earlier. The album had launched them into arenas — \"Lonely Boy\" was everywhere. Dan Auerbach and Patrick Carney had gone from Akron garage-blues to one of the biggest rock acts on the planet. This London date was part of a sold-out European run, a moment where everything was clicking: the songs, the production, the crowd size.",
+        venueInfo: "Alexandra Palace — Ally Pally — is a Victorian-era glass and iron palace perched on a hill in north London. Built in 1873, it was intended as \"The People's Palace.\" The Great Hall holds 10,000 and has the raw, cavernous feel of a place that has seen everything from BBC broadcasts to ice skating to rock shows. The views of London from the surrounding park are unforgettable.",
+        experience: "The scale of Ally Pally hit differently from anything I'd experienced before. Ten thousand people in a Victorian glass palace, and the Black Keys somehow made it feel intimate. Auerbach's guitar tone filled every corner of that massive room. Getting there from Helsinki felt like a pilgrimage — my first time seeing them live after years of listening to their records."
+      },
+      {
+        id: "2012-11-05",
+        date: "5 Nov 2012",
+        artist: "Alabama Shakes",
+        support: "",
+        venue: "Astra",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.49, 13.44],
+        distance: 1504,
+        images: ["05 Nov 2012 02", "05 Nov 2012 03"],
+        videos: ["05 Nov 2012 01"],
+        artistInfo: "Alabama Shakes had released <em>Boys & Girls</em> earlier that year, and Brittany Howard's voice was still a revelation to most. They'd gone from playing small-town Alabama bars to international stages in under a year. The raw, unpolished soul-rock of that debut — tracks like \"Hold On\" and \"Rise to the Sun\" — carried an authenticity that made every show feel urgent.",
+        venueInfo: "Astra Kulturhaus sits in the Friedrichshain district of Berlin, inside the old Treptow-Arena complex. It's a mid-sized club with a capacity of around 1,500 — the kind of room that catches bands right before they outgrow it. The space has a raw, industrial Berlin charm with good sightlines from almost anywhere.",
+        experience: "This was the show that changed everything for me. Brittany Howard walked on stage and within thirty seconds, I understood what all the hype was about. That voice — enormous, shaking, completely in control even when it sounded like it might break. Astra was the perfect size for this band at this moment. You could feel the floor vibrate. The Berlin crowd was respectful but fully engaged, and by the end, strangers were looking at each other with that shared expression: did that just happen?"
+      },
+      {
+        id: "2012-11-06",
+        date: "6 Nov 2012",
+        artist: "The Heavy",
+        support: "Elle King",
+        venue: "Frannz Club",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.53, 13.41],
+        distance: 1504,
+        images: [],
+        videos: ["06 Nov 2012 01", "yt:tGULAixvGis", "yt:tDGckOOqAJ0"],
+        artistInfo: "The Heavy, the Bath-based rock-soul outfit, were touring behind <em>The Glorious Dead</em>. Known for their high-energy fusion of rock, funk, and soul, they'd gained wider attention through TV and film placements. Kelvin Swaby's powerful vocals combined with the band's tight grooves made them a fierce live act.",
+        venueInfo: "Frannz Club is tucked inside the Kulturbrauerei complex in Prenzlauer Berg — a former brewery turned cultural center. The club itself is compact, maybe 500 capacity, with low ceilings and a sweat-box atmosphere that suits loud, energetic bands perfectly.",
+        experience: "Night two of my Berlin double-header. After Alabama Shakes the night before, I wasn't sure anything could match up. But The Heavy are a different beast entirely — pure energy, Kelvin Swaby prowling the stage like a man possessed. Frannz Club was so small you could practically touch the band. And the opener, Elle King — I had no idea who she was, but she played with a ferocity that stuck with me. The Kulturbrauerei complex at night has a special atmosphere, the old brewery buildings lit up around the courtyard."
+      },
+      {
+        id: "2016-03-21",
+        date: "21 Mar 2016",
+        artist: "James Bay",
+        support: "",
+        venue: "Annexet",
+        city: "Stockholm",
+        country: "Sweden",
+        coords: [59.33, 18.07],
+        distance: 400,
+        images: ["21 Mar 2016 01", "21 Mar 2016 02", "21 Mar 2016 03"],
+        videos: [],
+        artistInfo: "James Bay was riding the wave of his debut album <em>Chaos and the Calm</em>, released in 2015. \"Hold Back the River\" and \"Let It Go\" had made him a genuine star. The Brit Award for Critics' Choice was still fresh, and at 25, he was filling mid-sized arenas across Europe with his blend of folk-rock anthems.",
+        venueInfo: "Annexet is the smaller sibling of the Ericsson Globe in Stockholm, holding around 3,000. It sits right next to the iconic spherical arena in the Johanneshov district. Despite being secondary, it has excellent acoustics and a more intimate feel than its famous neighbor.",
+        experience: "Stockholm is the easiest international trip from Helsinki — just a short flight across the Baltic. Annexet had a clean, modern Scandinavian feel, and James Bay filled it well. He was clearly still riding the high of his breakthrough year. The audience skewed young and enthusiastic. There's something nice about seeing a rising artist in a Nordic setting — the crowds are attentive and the venues run like clockwork."
+      },
+      {
+        id: "2016-05-07",
+        date: "7 May 2016",
+        artist: "Iggy Pop",
+        support: "",
+        venue: "Tempodrom",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.50, 13.38],
+        distance: 1504,
+        images: ["07 May 2016 01", "07 May 2016 03"],
+        videos: ["07 May 2016 02"],
+        artistInfo: "This was the <em>Post Pop Depression</em> tour — Iggy Pop's collaboration with Josh Homme of Queens of the Stone Age. The album was a critical triumph, hailed as Iggy's best work in decades. With Homme, Dean Fertita, and Matt Helders backing him, it was a supergroup situation. Iggy had hinted this might be his last major tour, giving every show extra weight.",
+        venueInfo: "Tempodrom is a striking tent-shaped concrete venue near Potsdamer Platz in Berlin. Originally an actual circus tent erected in the 1980s, it was rebuilt as a permanent structure in 2001. The main hall holds about 3,500 and has remarkable acoustics thanks to its conical roof design. It's one of Berlin's most distinctive venues.",
+        experience: "Post Pop Depression live was something else. Iggy at nearly 70, still shirtless, still throwing himself around the stage — but with Josh Homme's band behind him, it sounded massive. Tempodrom was the right venue for this: big enough to feel like an event, shaped so the sound wrapped around you. \"Lust for Life\" with that lineup was electric. There was a sense that this might be the last time Iggy did something at this level, and the crowd in Berlin — his adopted city for years — responded accordingly."
+      },
+      {
+        id: "2016-07-08",
+        date: "08 Jul 2016",
+        artist: "British Summer Time Festival 2016",
+        support: "Mumford & Sons, Alabama Shakes, BØRNS, Wolf Alice",
+        venue: "Hyde Park",
+        city: "London",
+        country: "UK",
+        coords: [51.51, -0.16],
+        distance: 1827,
+        images: ["08 Jul 2016 01"],
+        videos: ["08 Jul 2016 02", "08 Jul 2016 03", "08 Jul 2016 04"],
+        artistInfo: "The headliner billing was shared between Mumford & Sons and a stacked undercard. But for me, the draw was Alabama Shakes — now touring behind <em>Sound & Color</em>, their genre-defying second album. They'd evolved from the scrappy soul-rockers I'd seen in Berlin four years earlier into something far more ambitious. Kurt Vile brought his slacker-genius guitar work, and Wolf Alice were still ascending.",
+        venueInfo: "British Summer Time takes over the Great Lawn of Hyde Park every July. The main stage faces a massive open field that can hold 65,000. Despite the size, the park setting — with its old trees lining the perimeter — gives it a different feel from a concrete stadium. Central London's skyline peeks above the tree line.",
+        experience: "I'd come for Alabama Shakes, but they played in bright daylight — and as much as I love them, it wasn't the same magic as that dark, sweaty night in Astra four years earlier. Some bands need the dark. Still, hearing Brittany Howard's voice roll across Hyde Park was something. Then Mumford & Sons took the stage as the sun was setting, and everything shifted. The light changed, the energy changed. We all had these luminous sticks, thousands of them glowing across the park, swaying together. Marcus Mumford had 65,000 people in his hand. And then the fireworks — massive, above the London skyline — put the crown on it. I came for one band and left converted by another."
+      },
+      {
+        id: "2016-11-30",
+        date: "30 Nov 2016",
+        artist: "KALEO",
+        support: "Dan Owen",
+        venue: "Paradiso Grote Zaal",
+        city: "Amsterdam",
+        country: "Netherlands",
+        coords: [52.36, 4.88],
+        distance: 1837,
+        images: ["30 Nov 2016 01", "30 Nov 2016 03", "30 Nov 2016 04", "30 Nov 2016 05", "30 Nov 2016 06"],
+        videos: ["30 Nov 2016 02"],
+        artistInfo: "KALEO, the Icelandic blues-rock band, were touring their debut album <em>A/B</em>. \"Way Down We Go\" had become a massive sync hit, appearing in dozens of TV shows. JJ Julius Son's deep, resonant voice and the band's surprising blues authenticity — coming from Mosfellsbær, Iceland — made them one of the more unexpected breakout acts of 2016.",
+        venueInfo: "Paradiso is a legendary Amsterdam venue housed in a converted 19th-century church on the Leidseplein. The Grote Zaal (main hall) holds about 1,500 and has extraordinary acoustics thanks to the original church architecture — vaulted ceilings, stained glass, and a balcony that wraps around the room. It's consistently ranked among the world's best music venues.",
+        experience: "A converted church in Amsterdam — what better place to hear KALEO's deep, reverberating blues? The Paradiso is everything people say it is. The vaulted ceiling caught JJ Julius Son's voice and held it there. Dan Owen opened and set the mood well. Amsterdam in late November has a special atmosphere: the canals, the cold, the warm glow from the windows. Walking back to the hotel after the show, the city felt like it was still humming."
+      },
+      {
+        id: "2017-11-04",
+        date: "4 Nov 2017",
+        artist: "Black Rebel Motorcycle Club",
+        support: "",
+        venue: "O2 Academy Brixton",
+        city: "London",
+        country: "UK",
+        coords: [51.47, -0.11],
+        distance: 1827,
+        images: ["04 Nov 2017 02", "04 Nov 2017 03"],
+        videos: ["04 Nov 2017 01"],
+        artistInfo: "BRMC were touring <em>Wrong Creatures</em>, though the album wouldn't officially drop until January 2018. The San Francisco trio — Peter Hayes, Robert Levon Been, and Leah Shapiro — had been making dark, swirling rock for nearly two decades. They'd survived lineup changes and personal losses (Robert's father, Michael Been, died in 2010) and emerged with a sound that was heavier and more psychedelic than ever.",
+        venueInfo: "O2 Academy Brixton is one of London's most iconic live music venues. Originally the Astoria Cinema (built 1929), it holds nearly 5,000 across a steeply raked floor and balcony. The art deco interior, combined with the sloped floor that gives everyone a decent view, makes it special. It's a rite of passage for rock bands — if you can fill Brixton Academy, you've made it in the UK.",
+        experience: "Brixton Academy is the kind of room where you feel the history the moment you walk in. That famous sloped floor, the art deco details, thousands of people crammed in — and then BRMC hit the stage with that wall of reverb and distortion. They're a band best experienced loud and in a dark room, and Brixton delivered on both counts. The journey there — train from Gatwick, the bustle of south London — was part of the experience."
+      },
+      {
+        id: "2018-03-30",
+        date: "30 Mar 2018",
+        artist: "Nathaniel Rateliff & The Night Sweats",
+        support: "Slim Cessna's Auto Club",
+        venue: "Berns Salonger",
+        city: "Stockholm",
+        country: "Sweden",
+        coords: [59.33, 18.07],
+        distance: 400,
+        images: ["30 mar 2018 01", "30 Mar 2018 03"],
+        videos: ["30 mar 2018 03"],
+        artistInfo: "Nathaniel Rateliff & The Night Sweats had turned \"S.O.B.\" into an unlikely hit — a raw soul stomper about sobriety that became a party anthem. By 2018 they were touring <em>Tearing at the Seams</em>, their second album, which showed a deeper, more nuanced side. Rateliff's voice — rough-hewn, emotionally direct — was at the heart of their appeal.",
+        venueInfo: "Berns Salonger is a historic entertainment palace in central Stockholm, dating back to 1863. The main hall — with its ornate ceiling, chandeliers, and balcony — holds about 1,400. It's the kind of elegant room where the architecture elevates the music. Located right on Berzelii Park, it's quintessential Stockholm.",
+        experience: "Berns is where grandeur meets grit, and Nathaniel Rateliff fit perfectly. The ornate 19th-century ballroom, crystal chandeliers overhead, and then this man from Denver pouring out his soul. \"S.O.B.\" had the entire room jumping. Slim Cessna's Auto Club opened and were gloriously weird — exactly the kind of band you didn't know you needed. Stockholm in early spring, still cold but with the light starting to return."
+      },
+      {
+        id: "2018-06-28",
+        date: "28 Jun 2018",
+        artist: "Jack White",
+        support: "Shirt",
+        venue: "Eventim Apollo",
+        city: "London",
+        country: "UK",
+        coords: [51.49, -0.22],
+        distance: 1827,
+        images: ["28 Jun 2018 01", "28 Jun 2018 02"],
+        videos: [],
+        artistInfo: "Jack White was touring <em>Boarding House Reach</em>, his most experimental solo album. After the blues-rock purity of The White Stripes and the country-tinged Raconteurs, this album was intentionally strange — synths, spoken word, genre collisions. Live, though, White remained a guitar force of nature, and his band could pivot from delicate to devastating in seconds.",
+        venueInfo: "The Eventim Apollo (formerly Hammersmith Apollo) is an art deco theater in west London, opened in 1932. With 5,000 seats across stalls and a sweeping balcony, it has hosted everyone from The Beatles to David Bowie. The seated format means you actually watch and listen rather than just survive a crowd.",
+        experience: "Jack White in an art deco theater — it felt right. The Eventim Apollo has that old-world grandeur, and White has the showmanship to match it. He played guitar like he was trying to wrestle something out of it, and the Boarding House Reach material was more interesting live than on record. London was sweltering in a rare heatwave. The city felt different in that heat, slower, more Mediterranean."
+      },
+      {
+        id: "2018-06-30",
+        date: "30 Jun 2018",
+        artist: "Queens of the Stone Age",
+        support: "The Hives, Iggy Pop, Deap Vally",
+        venue: "Finsbury Park",
+        city: "London",
+        country: "UK",
+        coords: [51.57, -0.10],
+        distance: 1827,
+        images: ["30 Jun 2018 01", "30 Jun 2018 02", "30 Jun 2018 03"],
+        videos: [],
+        artistInfo: "QOTSA were touring <em>Villains</em>, produced by Mark Ronson, and headlining their own outdoor festival day. Josh Homme had assembled a ridiculous undercard — his friend Iggy Pop, Run The Jewels at the peak of their powers, The Hives, and Curtis Harding among others. This was less a concert and more a statement of taste.",
+        venueInfo: "Finsbury Park is a large Victorian public park in north London that hosts occasional major outdoor concerts. The concert area sits in the flat center of the park, surrounded by mature trees. With a capacity of around 45,000 for concerts, it has hosted some of London's biggest outdoor shows.",
+        experience: "The lineup alone justified the trip. Iggy Pop in the afternoon, Run The Jewels bringing chaos, The Hives being impossibly tight and entertaining, and then Queens of the Stone Age closing as the sun went down. Finsbury Park on a summer day with that roster was one of those perfect convergences. Josh Homme curated a day that felt personal."
+      },
+      {
+        id: "2018-10-16",
+        date: "16 Oct 2018",
+        artist: "The Vintage Caravan",
+        support: "Wucan, Black Mirrors",
+        venue: "Lido",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.50, 13.44],
+        distance: 1504,
+        images: ["16 Oct 2018 02", "16 Oct 2018 03"],
+        videos: ["16 Oct 2018 01"],
+        artistInfo: "The Vintage Caravan are an Icelandic power trio playing heavy psychedelic rock. By 2018 they were touring <em>Gateways</em>, their fourth album. Three guys from Reykjavik making music that sounds like it fell through a time warp from 1972 — big riffs, extended jams, wah pedals for days. In their mid-twenties, they played with a maturity beyond their years.",
+        venueInfo: "Lido is a nightclub and live music venue in Berlin-Kreuzberg, located in a former cinema on Cuvrystraße. The main room holds around 600-700 and has a slightly elevated stage. Kreuzberg's gritty, multicultural character bleeds into the venue — it's the kind of room where the music matters more than the decor.",
+        experience: "Berlin-Kreuzberg at night, walking along the canal to find a former cinema full of heavy psych-rock — this is what traveling for music is about. The Vintage Caravan were impossibly loud for three people. The riffs were massive, the jams went deep, and Lido's former-cinema acoustics handled it well. Wucan and Black Mirrors set the tone nicely. Kreuzberg afterwards: kebabs, cold air, the feeling of a neighborhood that hasn't been sanitized."
+      },
+      {
+        id: "2019-03-20",
+        date: "20 Mar 2019",
+        artist: "Tommy Emmanuel",
+        support: "J.D. Simo",
+        venue: "Royal Festival Hall",
+        city: "London",
+        country: "UK",
+        coords: [51.51, -0.12],
+        distance: 1827,
+        images: ["20 Mar 2019 02", "20 Mar 2019 03"],
+        videos: ["20 Mar 2019 01"],
+        artistInfo: "Tommy Emmanuel is widely regarded as one of the greatest acoustic guitarists alive. The Australian fingerstyle virtuoso has been performing since he was four years old. By 2019, he was a living legend — a CGP (Certified Guitar Player, one of five ever designated by Chet Atkins) who could make a single acoustic guitar sound like an entire band.",
+        venueInfo: "The Royal Festival Hall sits on the South Bank of the Thames, part of the Southbank Centre complex. Opened in 1951 for the Festival of Britain, it seats 2,500 in a hall specifically designed for musical performance. The acoustics are pristine — built for orchestras, which means every note of an acoustic guitar rings with perfect clarity.",
+        experience: "A concert hall built for orchestras, and Tommy Emmanuel filled it with just an acoustic guitar. That's the measure of the man. The Royal Festival Hall's acoustics are surgical — you could hear every harmonic, every percussive tap on the guitar body. J.D. Simo opened and played with a fire that surprised me. Walking along the South Bank afterwards, the Thames lit up, London feeling civilized and beautiful."
+      },
+      {
+        id: "2019-04-08",
+        date: "8 Apr 2019",
+        artist: "Tedeschi Trucks Band",
+        support: "",
+        venue: "Cirkus",
+        city: "Stockholm",
+        country: "Sweden",
+        coords: [59.33, 18.07],
+        distance: 400,
+        images: ["08 Apr 2019 01", "08 Apr 2019 03"],
+        videos: ["08 Apr 2019 02"],
+        artistInfo: "Tedeschi Trucks Band — the 12-piece powerhouse led by guitarist Derek Trucks and singer Susan Tedeschi — were at the height of their powers. Derek Trucks is often mentioned alongside the greatest slide guitarists in history. The band's blend of blues, gospel, jazz, and rock, delivered by a full horn section and two backup singers, creates a wall of soul that few bands can match.",
+        venueInfo: "Cirkus is a historic circular venue in Stockholm's Djurgården district, originally built as a circus theater in 1892. The round room with its balcony and ornate interior holds about 1,650. The circular shape means the sound wraps around you. It's one of Stockholm's most atmospheric performance spaces.",
+        experience: "Tedeschi Trucks Band in a circular 19th-century circus theater — the sound came from everywhere. Derek Trucks' slide guitar is otherworldly in person. You watch his hands and you can't figure out how those sounds are possible. The full 12-piece band in Cirkus's round room created something immersive. Stockholm in April, the winter finally loosening its grip, long walks by the water before the show."
+      },
+      {
+        id: "2019-05-23",
+        date: "23 May 2019",
+        artist: "The Heavy",
+        support: "Black Pumas",
+        venue: "La Maroquinerie",
+        city: "Paris",
+        country: "France",
+        coords: [48.87, 2.38],
+        distance: 1912,
+        images: ["23 May 2019 02", "23 May 2019 03"],
+        videos: ["23 May 2019 01"],
+        artistInfo: "The Heavy were now touring <em>Sons</em>, their fifth album. Seven years after I'd first seen them in that Berlin basement, they were still the same sweat-drenched live force — Kelvin Swaby's voice, the funk grooves, the rock energy. <em>Sons</em> continued their formula of genre-blending soul-rock with tracks you couldn't stand still to.",
+        venueInfo: "La Maroquinerie is an intimate venue in the 20th arrondissement of Paris, in the Ménilmontant neighborhood. A former leather factory (hence the name), it holds about 500. The room has an organic, slightly worn quality — exposed brick, low ceiling, bar at the back. It's the kind of Parisian venue that tourists never find.",
+        experience: "Second time seeing The Heavy, now in Paris. La Maroquinerie is hidden in Ménilmontant — you walk through residential streets, past local bars, and suddenly there's this former leather factory with incredible music pouring out of it. The Parisian crowd danced differently from the Berlin one — more style, more rhythm, less headbanging. Kelvin Swaby adjusted accordingly, leaning into the funk. Walking home through eastern Paris at midnight, the neighborhood was still alive."
+      },
+      {
+        id: "2019-10-03",
+        date: "3 Oct 2019",
+        artist: "Gary Clark Jr.",
+        support: "Jackie Venson",
+        venue: "Stubb's Waller Creek Amphitheater",
+        city: "Austin",
+        country: "US",
+        coords: [30.27, -97.74],
+        distance: 8704,
+        images: ["03 Oct 2019 01", "03 Oct 2019 03"],
+        videos: ["03 Oct 2019 02"],
+        artistInfo: "Gary Clark Jr. was touring <em>This Land</em>, his most ambitious and politically charged album. The Austin native had evolved from blues prodigy to a genuine artist making statements. \"This Land\" tackled racism in America head-on. Seeing him at Stubb's — his hometown venue — was like catching a hero on home turf. Jackie Venson, another Austin guitar talent, opened.",
+        venueInfo: "Stubb's BBQ & Amphitheater is an Austin institution — a barbecue restaurant with an outdoor amphitheater that holds about 2,100. Located on Red River Street in the heart of Austin's live music district, it's been a launching pad for countless Texas artists. The outdoor setting, with Austin's warm night air and the smell of barbecue, is quintessentially Texan.",
+        experience: "Seeing Gary Clark Jr. at Stubb's — his home venue in his home city — the night before ACL Festival. This was as authentic as it gets. The warm Austin night, the smell of barbecue in the air, and Gary playing with the confidence of a man on his own ground. \"This Land\" was powerful live, and the crowd — locals who'd been watching him since he was a teenager at Continental Club — received it like gospel. Jackie Venson opened and reminded everyone that Austin's guitar tradition is alive and well."
+      },
+      {
+        id: "2019-10-04",
+        date: "4 Oct 2019",
+        endDate: "6 Oct 2019",
+        artist: "Austin City Limits Music Festival",
+        support: "Billie Eilish, Mumford & Sons, Gary Clark Jr., IDLES, Black Pistol Fire, Kacey Musgraves...",
+        venue: "Zilker Park",
+        city: "Austin",
+        country: "US",
+        coords: [30.27, -97.77],
+        distance: 8704,
+        images: ["04 Oct 2019 02", "04 Oct 2019 03", "04 Oct 2019 04"],
+        videos: ["04 Oct 2019 01", "05 Oct 2019 01", "06 Oct 2019 02"],
+        artistInfo: "ACL 2019 was stacked. Billie Eilish was 17 and already the biggest new artist in the world. Mumford & Sons headlined. Gary Clark Jr. got a hero's homecoming on the big stage. IDLES brought their post-punk fury. Kacey Musgraves was fresh off her Grammy Album of the Year. Black Pistol Fire — the Austin duo — were a highlight for those who knew where to be.",
+        venueInfo: "Zilker Park is Austin's beloved 351-acre metropolitan park along the Colorado River. During ACL, it transforms into a festival ground with eight stages spread across the rolling fields. The downtown Austin skyline rises behind the main stage, and the Texas sun (still fierce in October) gives everything a golden cast. It's one of America's premier music festivals.",
+        experience: "Three days in Zilker Park, 8,700 km from home. ACL is overwhelming in the best way — you sprint between stages, you discover bands you've never heard of, you lie in the grass when your legs give out. Gary Clark Jr. on the main stage — seeing him at Stubb's the night before and then here, the scale shift was incredible. IDLES were unhinged. Billie Eilish had the youngest crowd I'd ever seen at a festival. The Austin heat, the food trucks, the whole ecosystem of the festival — this was a different world from Helsinki."
+      },
+      {
+        id: "2019-10-08",
+        date: "8 Oct 2019",
+        artist: "The Black Keys",
+        support: "",
+        venue: "Van Andel Arena",
+        city: "Grand Rapids, MI",
+        country: "US",
+        coords: [42.96, -85.67],
+        distance: 7428,
+        images: ["08 Oct 2019 01", "08 Oct 2019 02", "08 Oct 2019 05", "08 Oct 2019 06"],
+        videos: ["08 Oct 2019 03", "08 Oct 2019 04"],
+        artistInfo: "The Black Keys were touring <em>\"Let's Rock\"</em>, their ninth album and a return to the raw guitar-driven sound after a five-year hiatus. Dan Auerbach and Patrick Carney had taken time apart to work on other projects, and the reunion album felt reinvigorated. Seven years after seeing them at Alexandra Palace, they'd come full circle.",
+        venueInfo: "Van Andel Arena is a 12,000-seat multi-purpose arena in downtown Grand Rapids, Michigan. Not the most glamorous setting — it's primarily a hockey arena for the AHL's Griffins — but it does the job for touring rock acts. Grand Rapids itself is a mid-sized Midwestern city with a surprisingly vibrant food and beer scene.",
+        experience: "From Austin to Michigan — the American leg of the trip continued. Van Andel Arena is a hockey rink repurposed for rock shows, and there's an honesty to that kind of venue. The Black Keys, seven years after I'd seen them at Ally Pally, now playing \"Let's Rock\" — they'd circled back to the raw sound that made me fall in love with them. Dan Auerbach's guitar tone hasn't changed: thick, bluesy, perfect. Grand Rapids was an unexpected stop, but sometimes the detours are what you remember."
+      },
+      {
+        id: "2022-04-01",
+        date: "1 Apr 2022",
+        artist: "The Revivalists",
+        support: "Record Company",
+        venue: "Radio City Music Hall",
+        city: "New York",
+        country: "US",
+        coords: [40.76, -73.98],
+        distance: 6618,
+        images: ["01 Apr 2022 01", "01 Apr 2022 03", "01 Apr 2022 05", "01 Apr 2022 06"],
+        videos: ["01 Apr 2022 02", "01 Apr 2022 04"],
+        artistInfo: "The Revivalists, the New Orleans-based eight-piece, were touring <em>Take Good Care</em> and newer material. Their blend of rock, funk, and jam-band energy had grown them from NOLA bar band to arena act. David Shaw's vocals and Zack Feinberg's guitar work anchored a band that thrived on live energy. Selling out Radio City was a milestone. Record Company opened with their raw, stripped-down rock.",
+        venueInfo: "Radio City Music Hall is one of the most famous entertainment venues in the world. Opened in 1932 as part of Rockefeller Center, the art deco masterpiece seats nearly 6,000. The Great Stage, the vaulted ceiling, the Rockettes' home — performing here means you've reached a certain level. Despite the grandeur, the acoustics work surprisingly well for rock shows.",
+        experience: "Radio City Music Hall. The name alone carries weight. Walking into that art deco cathedral for a rock show felt surreal — the ceiling, the stage, the sheer scale of it. The Revivalists filled the room with New Orleans energy, and Record Company opened with a raw intensity that bounced off all that gilded elegance. New York in spring, walking through Midtown afterward, the city buzzing at midnight — this is why you travel for music."
+      },
+      {
+        id: "2022-04-06",
+        date: "6 Apr 2022",
+        artist: "Jack Broadbent",
+        support: "",
+        venue: "Rockwood Music Hall",
+        city: "New York",
+        country: "US",
+        coords: [40.72, -73.99],
+        distance: 6618,
+        images: ["06 Apr 2022 02", "06 Apr 2022 03"],
+        videos: ["06 Apr 2022 01"],
+        artistInfo: "Jack Broadbent is a British slide guitarist and singer who busked his way around the world before landing in New York. His percussive, one-man-band style — stomp box, resonator guitar, that unmistakable slide tone — earned him a Ruf Records deal and a cult following. In a small room, his energy is incredible.",
+        venueInfo: "Rockwood Music Hall is a tiny club on the Lower East Side of Manhattan, on Allen Street. Stage 1 holds maybe 75 people, elbow to elbow. It's been a crucial incubator for New York's indie music scene since 2005. No cover charge, no pretension — just music in its most intimate form.",
+        experience: "From Radio City Music Hall to Rockwood — 6,000 seats to 75. That contrast defined this New York week. Jack Broadbent in a room so small you could count the strings on his guitar. His slide playing was hypnotic, the stomp box shook the floor, and the Lower East Side crowd — real music people, not tourists — hung on every note. This is the New York that musicians come for: the tiny room where anything can happen."
+      },
+      {
+        id: "2022-04-07",
+        date: "7 Apr 2022",
+        artist: "Buddy Guy",
+        support: "",
+        venue: "NYCB Theatre at Westbury",
+        city: "New York",
+        country: "US",
+        coords: [40.76, -73.56],
+        distance: 6618,
+        images: ["08 Apr 2022 01"],
+        videos: ["08 Apr 2022 02", "08 Apr 2022 03"],
+        artistInfo: "Buddy Guy — the living legend of Chicago blues, then 85 years old. Influenced by Muddy Waters and Howlin' Wolf, he in turn influenced Hendrix, Clapton, and Page. His guitar style — aggressive, unpredictable, wildly expressive — hadn't mellowed with age. Every show at this point felt like it could be one of the last chances to see a direct link to the golden age of Chicago blues.",
+        venueInfo: "NYCB Theatre at Westbury is a theater-in-the-round on Long Island, New York. The revolving stage means every seat eventually becomes front row. Built in 1966 as the Westbury Music Fair, it holds about 2,800 in a circular configuration. It's an unusual experience — the intimacy of a small venue with the capacity of a medium one.",
+        experience: "Buddy Guy at 85, still playing guitar like a man half his age — actually, like no one at any age. The theater-in-the-round format at Westbury meant he was right there, spinning with the stage, making eye contact, walking into the audience with a 30-foot guitar cable. He told stories between songs, cracked jokes, played guitar behind his head. This wasn't nostalgia — it was a masterclass from someone who helped invent the language of electric blues."
+      },
+      {
+        id: "2022-06-19",
+        date: "19 Jun 2022",
+        artist: "Black Pumas",
+        support: "The Heavy Heavy",
+        venue: "Berns Salonger",
+        city: "Stockholm",
+        country: "Sweden",
+        coords: [59.33, 18.07],
+        distance: 400,
+        images: ["19 Jun 2022 03", "19 Jun 2022 04", "19 Jun 2022 05"],
+        videos: ["19 Jun 2022 01", "19 Jun 2022 02"],
+        artistInfo: "Black Pumas — the Austin duo of singer Eric Burton and guitarist/producer Adrian Quesada — had emerged with a self-titled debut that earned a Grammy nomination. Their psychedelic soul sound, anchored by Burton's extraordinary voice, felt both vintage and contemporary. \"Colors\" had become an anthem. By 2022, they were one of the most exciting live acts in soul music.",
+        venueInfo: "Back at Berns Salonger — the ornate Stockholm ballroom I'd visited for Nathaniel Rateliff three years earlier. The venue's 19th-century elegance remained unchanged: chandeliers, balcony, the sense of history. For Black Pumas' smooth psychedelic soul, it was an ideal match.",
+        experience: "Black Pumas at Berns — after the pandemic, this was one of the first international shows I could attend. The feeling of being back in a live music venue, in another country, was overwhelming. Eric Burton's voice in that ornate room was something I won't forget. There was an emotional charge that went beyond the music — the simple act of being there, surrounded by strangers sharing something, felt like a gift. The Heavy Heavy opened with a retro-soul energy that promised great things."
+      },
+      {
+        id: "2022-07-22",
+        date: "22 Jul 2022",
+        artist: "Fantastic Negrito",
+        support: "",
+        venue: "Teatro Romano",
+        city: "Fiesole",
+        country: "Italy",
+        coords: [43.81, 11.29],
+        distance: 2269,
+        images: ["20 Jul 2022 01", "22 Jul 2022 04"],
+        videos: ["20 Jul 2022 02"],
+        artistInfo: "Fantastic Negrito (Xavier Dphrepaulezz) is a three-time Grammy winner from Oakland whose music blends blues, rock, and R&B with social commentary. A car accident nearly ended his career, and the comeback story fuels his intensity. By 2022 he was touring <em>White Jesus Black Problems</em>, an ambitious concept album about an interracial couple in 1700s Virginia.",
+        venueInfo: "Teatro Romano di Fiesole is a 1st-century BC Roman amphitheater in the hills above Florence. Carved into the hillside with views over the Tuscan landscape, it seats about 3,000 for summer performances. Watching live music in a 2,000-year-old Roman theater, with the Florentine hills as backdrop, is an experience that transcends the ordinary.",
+        experience: "A Roman amphitheater from the first century BC, the Tuscan hills glowing in the July sunset, and Fantastic Negrito bringing Oakland blues-rock to this ancient stage. The contrast was staggering. His energy — fierce, physical, spiritual — bounced off stones that have hosted performances for two millennia. Fiesole is a short bus ride above Florence, but it feels like a different world. The warm Italian night, the olive trees, the acoustic perfection of a space designed before amplification existed."
+      },
+      {
+        id: "2022-11-06",
+        date: "6 Nov 2022",
+        artist: "Shakey Graves",
+        support: "S.G. Goodman",
+        venue: "Heimathafen Neukölln",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.48, 13.43],
+        distance: 1504,
+        images: ["06 Nov 2022 01", "06 Nov 2022"],
+        videos: ["06 Nov 2022 02"],
+        artistInfo: "Shakey Graves (Alejandro Rose-Garcia) is an Austin songwriter who built his reputation busking with a suitcase kick drum and a guitar. By 2022 he'd released <em>Can't Wake Up</em> and was performing with a full band, though the raw, one-man-band ethos remained. His songs balance folk intimacy with rock energy, and his stage presence is magnetic.",
+        venueInfo: "Heimathafen Neukölln is a beautifully restored 1908 ballroom in Berlin's Neukölln district. The ornate plaster ceiling, curved balcony, and art nouveau details make it one of Berlin's most atmospheric mid-sized venues. It holds about 600 and feels like discovering a secret ballroom hidden in one of Berlin's grittiest neighborhoods.",
+        experience: "Neukölln is not the Berlin of tourist guides — it's Turkish grocers, late-night bars, a feeling of real life. And then you walk into Heimathafen and you're in a restored art nouveau ballroom. Shakey Graves filled that contradictory space perfectly — Austin grit in European elegance. S.G. Goodman opened with a raw authenticity that set the tone. The Berlin autumn outside, leaves on the canal, the contrast of beautiful room and honest music."
+      },
+      {
+        id: "2022-11-07",
+        date: "7 Nov 2022",
+        artist: "Franz Ferdinand",
+        support: "",
+        venue: "Verti Music Hall",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.51, 13.44],
+        distance: 1504,
+        images: ["07 Nov 2022 02", "07 Nov 2022 03"],
+        videos: ["07 Nov 2022 01"],
+        artistInfo: "Franz Ferdinand were touring <em>Hits to the Head</em>, their greatest hits compilation with a few new tracks. The Scottish art-rock band had been a defining force of the mid-2000s indie era — \"Take Me Out\" is one of those songs that changed what guitar music could sound like. By 2022, they were a well-oiled live machine with a catalogue of floor-fillers.",
+        venueInfo: "Verti Music Hall is a modern 4,200-capacity venue in Berlin's Mercedes-Benz Arena complex, opened in 2018. Designed specifically for concerts, it has a standing floor and tiered seating with good sightlines throughout. It's functional and purpose-built — lacking the character of Berlin's older venues but making up for it in sound quality.",
+        experience: "Night two of a Berlin double-header — becoming a pattern for me. Verti Music Hall is modern and clean, the opposite of the Heimathafen the night before. Franz Ferdinand didn't need atmosphere from the room; they brought their own. \"Take Me Out\" still hits like it did in 2004. Alex Kapranos worked the crowd with the confidence of two decades of doing exactly this. Sometimes a greatest-hits show is exactly what you want."
+      },
+      {
+        id: "2023-05-31",
+        date: "31 May 2023",
+        artist: "The Devil Makes Three",
+        support: "The Bones of J.R. Jones",
+        venue: "Paradiso Grote Zaal",
+        city: "Amsterdam",
+        country: "Netherlands",
+        coords: [52.36, 4.88],
+        distance: 1837,
+        images: [],
+        videos: ["31 May 2023 01", "31 May 2023 02", "31 May 2023 03"],
+        artistInfo: "The Devil Makes Three play a ferocious blend of folk, bluegrass, and punk. The Santa Cruz trio — Pete Bernhard, Lucia Turino, and Cooper McBean — have been making rowdy acoustic music since 2002. Their songs about drinking, rambling, and hard living sound like they were written a century ago but played with modern intensity. Live, they're a force that gets every room dancing.",
+        venueInfo: "Back at the Paradiso — the converted church on Leidseplein. Seven years after KALEO, and the magic of the space was undiminished: the stained glass, the balcony, the church acoustics that make every instrument ring. Some venues you return to like old friends.",
+        experience: "Second time at the Paradiso, and if anything it was better. The Devil Makes Three in a converted church — there's a poetic justice to it. Their brand of rowdy folk-punk had the whole room stomping, and the church floor was bouncing. The Bones of J.R. Jones opened, and his raw, one-man intensity was perfect preparation. Amsterdam in late May is gorgeous — the canals, the light, the long evenings. Walking back along the Herengracht after the show, still buzzing."
+      },
+      {
+        id: "2023-11-18",
+        date: "18 Nov 2023",
+        artist: "The Bones of J.R. Jones",
+        support: "",
+        venue: "Brotfabrik",
+        city: "Frankfurt",
+        country: "Germany",
+        coords: [50.12, 8.72],
+        distance: 1815,
+        images: [],
+        videos: ["18 Nov 2023 01", "18 Nov 2023 02"],
+        artistInfo: "The Bones of J.R. Jones is Jonathon Robert Linaberry — a one-man band from upstate New York who builds enormous sound from a guitar, a stomp box, and a voice that sounds like it was aged in a whiskey barrel. After opening for The Devil Makes Three in Amsterdam, I knew I had to see him headline. His dark Americana combines folk, blues, and gospel into something haunting.",
+        venueInfo: "Brotfabrik is a small cultural center in Frankfurt's Hausen district — a former bread factory converted into performance spaces. The concert room is tiny, maybe 150 capacity. It's the kind of place you'd never find without looking for it — tucked away in a residential neighborhood, no signage, just a door and the muffled sound of music.",
+        experience: "After seeing Bones of J.R. Jones open in Amsterdam, I traveled to Frankfurt to see him headline. Brotfabrik is hidden in a residential neighborhood — you ring a doorbell, walk through a courtyard, and find this tiny former bakery filled with maybe 100 people. The intimacy was overwhelming. When it's just one man with a guitar and a stomp box, and you're three meters away, every emotion on his face is visible. Frankfurt isn't a city people travel to for music, and that made it feel more like a discovery."
+      },
+      {
+        id: "2024-07-16",
+        date: "16 Jul 2024",
+        artist: "Fantastic Negrito",
+        support: "",
+        venue: "Fantastic Negrito",
+        city: "Warsaw",
+        country: "Poland",
+        coords: [52.23, 21.01],
+        distance: 1102,
+        images: ["16 Jul 2024 01"],
+        videos: ["16 Jul 2024 02", "16 Jul 2024 03"],
+        artistInfo: "Fantastic Negrito's second appearance in my travels — this time in Warsaw. Still touring <em>White Jesus Black Problems</em> and newer material, his live show had, if anything, gotten more intense. His between-song stories about growing up Black in America, the car crash that nearly killed him, his years of homelessness — they gave the music context that deepened everything.",
+        venueInfo: "Warsaw was a new city for me, and the venue sits in the cultural landscape of a capital that has rebuilt itself from total destruction. Poland's live music scene has grown significantly, with audiences hungry for international acts that might skip Eastern Europe.",
+        experience: "First time in Poland, and Fantastic Negrito was the reason. Warsaw surprised me — the rebuilt old town, the energy of a city that's emerged from so much history with such vitality. Seeing Negrito for the second time, after the Roman amphitheater in Fiesole, this was a completely different context. The Polish crowd was fervent — perhaps because international acts don't come through as often. Negrito fed off that energy, and the show was rawer, longer, more personal than the Italian date."
+      },
+      {
+        id: "2024-11-09",
+        date: "9 Nov 2024",
+        artist: "Fantastic Negrito",
+        support: "",
+        venue: "Nalen Klubb",
+        city: "Stockholm",
+        country: "Sweden",
+        coords: [59.34, 18.08],
+        distance: 400,
+        images: ["09 Nov 2024 02"],
+        videos: ["09 Nov 2024 01"],
+        artistInfo: "Third time seeing Fantastic Negrito — at this point, he was an artist I followed across countries. Each show revealed something new. His ability to connect with audiences, to turn a room into a church, to make every person feel seen — it's rare. The smaller club format suited him, stripping away any barrier between performer and crowd.",
+        venueInfo: "Nalen is one of Stockholm's great music venues, opened in 1886. Nalen Klubb is the smaller of its rooms — around 300 capacity — located in the basement. The intimate setting, combined with Nalen's history as the center of Swedish jazz and popular music, gives even a small show historical weight.",
+        experience: "Third time seeing Fantastic Negrito, third country. Nalen Klubb is a basement room in one of Stockholm's oldest music venues, and the intimacy was perfect. By now I knew the songs, the stories, the way he builds a show — but he still found ways to surprise me. The small room meant he was practically in the audience. Stockholm in November, early darkness, the warmth of a basement club contrasting with the cold outside."
+      },
+      {
+        id: "2025-03-07",
+        date: "7 Mar 2025",
+        artist: "Michael Kiwanuka",
+        support: "",
+        venue: "Jahrhunderthalle",
+        city: "Frankfurt",
+        country: "Germany",
+        coords: [50.10, 8.65],
+        distance: 1815,
+        images: ["07 Mar 2025 01"],
+        videos: ["07 Mar 2025 02", "07 Mar 2025 03"],
+        artistInfo: "Michael Kiwanuka, the British-Ugandan singer-songwriter, had established himself as one of the most important voices in modern soul. His third album, <em>Kiwanuka</em> (2019), won the Mercury Prize and cemented his reputation. His music — lush, layered, drawing on Bill Withers, Marvin Gaye, and Radiohead in equal measure — is best experienced live where the arrangements unfold spatially.",
+        venueInfo: "Jahrhunderthalle (Century Hall) is a massive industrial venue in Frankfurt's Höchst district — a former gas works building from 1963. The main hall's raw, industrial architecture creates an unexpected cathedral-like atmosphere. It holds several thousand and has become one of Frankfurt's premier concert venues.",
+        experience: "Michael Kiwanuka's voice in an industrial cathedral. Jahrhunderthalle is a former gas works that has the acoustics of a church and the scale of a warehouse. Kiwanuka's band built walls of sound that filled every corner — \"Cold Little Heart\" was transcendent. Frankfurt in March, still cold, the industrial district quiet around the venue. Coming here for the second time (after The Bones of J.R. Jones), the city was becoming familiar in a good way."
+      },
+      {
+        id: "2025-11-07",
+        date: "7 Nov 2025",
+        artist: "Christone \"Kingfish\" Ingram",
+        support: "",
+        venue: "Columbia Theater",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.49, 13.36],
+        distance: 1504,
+        images: [],
+        videos: ["07 Nov 2025 01"],
+        artistInfo: "Christone \"Kingfish\" Ingram from Clarksdale, Mississippi — the spiritual home of the blues — was just 25 and already being called the future of the genre. Mentored by Buddy Guy (who I'd seen three years earlier), Kingfish plays with a maturity and intensity that belies his age. His debut <em>Kingfish</em> won a Grammy, and <em>662</em> proved it wasn't a fluke.",
+        venueInfo: "Columbia Theater is a former silent-film cinema in Berlin-Tempelhof, converted into a live music venue. The room holds about 800-900, with a flat floor and a balcony. It sits near the old Tempelhof Airport, giving the neighborhood a spacious, slightly removed feeling compared to central Berlin.",
+        experience: "Kingfish Ingram at 25, playing blues from Clarksdale in a former silent-film cinema in Berlin. The connections: Buddy Guy, who I'd seen in New York, mentored this kid. The blues tradition, passed down. Columbia Theater was a good room for it — not too big, not too small, the sound clean enough to hear every bend and vibrato. Berlin-Tempelhof at night, the old airport looming nearby, the sense of a city that contains multitudes."
+      },
+      {
+        id: "2025-11-09",
+        date: "9 Nov 2025",
+        artist: "Wet Leg",
+        support: "",
+        venue: "Columbiahalle",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.49, 13.36],
+        distance: 1504,
+        images: ["09 Nov 2025 03"],
+        videos: ["09 Nov 2025 01", "09 Nov 2025 02"],
+        artistInfo: "Wet Leg — Rhian Teasdale and Hester Chambers from the Isle of Wight — had gone from viral TikTok moment (\"Chaise Longue\") to genuine phenomenon. Their self-titled debut won the Brit Award for Best Group and two Grammys. Their blend of deadpan humor, indie hooks, and post-punk energy made them one of the defining guitar bands of the 2020s.",
+        venueInfo: "Columbiahalle is Columbia Theater's bigger sibling, right next door in Berlin-Tempelhof. The 3,500-capacity hall is a workhorse venue for mid-sized touring acts. Functional rather than beautiful, but the sound is reliable and the flat floor means good energy from a packed crowd.",
+        experience: "Two nights in Tempelhof — Kingfish on Friday, Wet Leg on Sunday. Completely different worlds. Wet Leg's show was pure joy: Rhian Teasdale's deadpan delivery, the hooks that drill into your brain, the crowd singing every word. \"Chaise Longue\" live is chaos in the best way. After the intensity of blues, this was liberation. Columbiahalle was packed and bouncing. The Berlin November pattern was becoming a tradition."
+      },
+      {
+        id: "2025-11-10",
+        date: "10 Nov 2025",
+        artist: "Mumford & Sons",
+        support: "",
+        venue: "Uber Arena",
+        city: "Berlin",
+        country: "Germany",
+        coords: [52.51, 13.44],
+        distance: 1504,
+        images: [],
+        videos: ["10 Nov 2025 01", "10 Nov 2025 02"],
+        artistInfo: "Mumford & Sons had evolved far from the banjo-driven folk of <em>Sigh No More</em>. By 2025, with Marcus Mumford leading a reconfigured lineup after Ben Lovett's departure, the band had embraced a broader sonic palette. Their arena shows balanced the anthemic folk-rock that made them famous with more textured, introspective material. They remained one of the biggest live draws in the world.",
+        venueInfo: "Uber Arena (formerly Mercedes-Benz Arena) is Berlin's largest indoor concert venue, holding around 17,000. Located in Friedrichshain on the banks of the Spree, it's part of a modern entertainment complex. For arena-scale shows it delivers — massive production, tiered seating, and the energy that only comes when thousands of people sing together.",
+        experience: "The biggest venue of this Berlin run — from Columbia Theater's 800 to Columbiahalle's 3,500 to Uber Arena's 17,000. Mumford & Sons at arena scale is a different kind of experience: the singalongs become tidal waves, the production becomes cinematic. Marcus Mumford has grown into a commanding frontman. \"I Will Wait\" with 17,000 voices is something you feel in your chest. Three gigs in four nights in Berlin — Kingfish, Wet Leg, Mumford & Sons — the range of that run captured everything I love about traveling for music."
+      },
+      {
+        id: "2025-11-12",
+        date: "12 Nov 2025",
+        artist: "Curtis Harding",
+        support: "",
+        venue: "O2 Shepherds Bush Empire",
+        city: "London",
+        country: "UK",
+        coords: [51.50, -0.22],
+        distance: 1827,
+        images: ["12 Nov 2025 01"],
+        videos: ["12 Nov 2025 02"],
+        artistInfo: "Curtis Harding had come full circle for me — I'd first seen him as a small-font name on the 2018 Finsbury Park lineup. The Atlanta soul singer, a former member of CeeLo Green's backing band, had released three albums of sophisticated soul-rock. <em>If Words Were Flowers</em> showcased his growth as a songwriter. Seeing him headline his own show, in a proper venue, felt like watching an arc complete.",
+        venueInfo: "O2 Shepherds Bush Empire is a 2,000-capacity venue in west London, originally a BBC television theater. The ornate Edwardian interior — with its balconied horseshoe layout — creates an intimate feel despite the decent capacity. It's one of London's best mid-sized rooms.",
+        experience: "Curtis Harding, who I'd first noticed as a small name on a festival poster seven years earlier, now headlining Shepherds Bush Empire. That arc — from discovery to devotion — is what this whole journey is about. His soul voice in that Edwardian theater was warm and commanding. The show felt personal, like he was singing to each person individually. London in November, the early dark, the pubs beforehand, the familiar feeling of a city I keep returning to for music."
+      },
+      {
+        id: "2025-11-13",
+        date: "13 Nov 2025",
+        artist: "Bahamas",
+        support: "",
+        venue: "Union Chapel",
+        city: "London",
+        country: "UK",
+        coords: [51.55, -0.10],
+        distance: 1827,
+        images: ["13 Nov 2025 01"],
+        videos: ["13 Nov 2025 02"],
+        artistInfo: "Bahamas is the stage name of Afie Jurvanen, a Canadian singer-songwriter and guitarist. His warm, laid-back style — part folk, part soul, part beach-bar ease — masks serious musicianship. A former touring guitarist for Feist, his solo work (especially <em>Earthtones</em> and <em>Sad Hunk</em>) brings a gentle, self-deprecating charm that's irresistible in an intimate setting.",
+        venueInfo: "Union Chapel is a working church in Islington, north London. The Victorian Gothic chapel — all arched windows, wooden pews, and candlelight — doubles as one of London's most magical concert venues. The congregation shares the space with music, and the acoustic properties of a building designed for organ and choir make it extraordinary for intimate performances. Capacity is about 900.",
+        experience: "The last night of this London trip, and the most magical venue of all. Union Chapel is a real, functioning church — you sit in pews, candles flicker, the Gothic arches rise above. Bahamas played with a warmth and humor that suited the space perfectly. Afie Jurvanen made a church feel like your living room. After all the traveling, all the venues, all the cities — sitting in a London chapel listening to a Canadian sing softly about love and loss felt like exactly where I was supposed to be. The ticket home."
+      }
+    ];
+
+    // ═══════════════════════════════════════════
+    // MAP
+    // ═══════════════════════════════════════════
+
+    const map = L.map('map', {
+      center: [52, 10],
+      zoom: 4,
+      zoomControl: false,
+      attributionControl: false,
+      scrollWheelZoom: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    // Helsinki home marker
+    const homeIcon = L.divIcon({ className: 'home-pulse', iconSize: [16, 16], iconAnchor: [8, 8] });
+    L.marker(HELSINKI, { icon: homeIcon }).addTo(map)
+      .bindTooltip('Helsinki', { permanent: false, direction: 'top', className: 'home-tooltip' });
+
+    // Draw arcs and venue dots
+    const drawnCities = {};
+    GIGS.forEach(gig => {
+      const key = gig.city + gig.country;
+      // Arc line
+      const midLat = (HELSINKI[0] + gig.coords[0]) / 2 + 1.5;
+      const midLng = (HELSINKI[1] + gig.coords[1]) / 2;
+      const latlngs = [HELSINKI, [midLat, midLng], gig.coords];
+      L.polyline(latlngs, {
+        color: '#e8a838',
+        weight: 1,
+        opacity: 0.25,
+        smoothFactor: 3
+      }).addTo(map);
+
+      // Venue dot (one per city)
+      if (!drawnCities[key]) {
+        const venueIcon = L.divIcon({ className: 'venue-dot', iconSize: [8, 8], iconAnchor: [4, 4] });
+        L.marker(gig.coords, { icon: venueIcon }).addTo(map)
+          .bindTooltip(`${gig.city}, ${gig.country}`, { direction: 'top' })
+          .on('click', () => {
+            document.getElementById(gig.id)?.scrollIntoView({ behavior: 'smooth' });
+          });
+        drawnCities[key] = true;
+      }
+    });
+
+    // ═══════════════════════════════════════════
+    // TIMELINE RENDERING
+    // ═══════════════════════════════════════════
+
+    const timeline = document.getElementById('timeline');
+    let currentYear = null;
+
+    // Reverse to chronological (oldest first)
+    const sortedGigs = [...GIGS].sort((a, b) => {
+      const parseDate = d => {
+        const parts = d.split(' ');
+        const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+        return new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
+      };
+      return parseDate(a.date) - parseDate(b.date);
+    });
+
+    sortedGigs.forEach(gig => {
+      const year = gig.date.split(' ')[2];
+      if (year !== currentYear) {
+        currentYear = year;
+        const yearEl = document.createElement('h2');
+        yearEl.className = 'timeline-year';
+        yearEl.textContent = year;
+        timeline.appendChild(yearEl);
+      }
+
+      const card = document.createElement('article');
+      card.className = 'event-card';
+      card.id = gig.id;
+
+      // Header
+      const dateStr = gig.endDate ? `${gig.date} – ${gig.endDate}` : gig.date;
+      let headerHTML = `
+        <div class="event-header">
+          <div class="event-meta">
+            <span class="event-date">${dateStr}</span>
+            <span class="event-distance">${gig.distance.toLocaleString()} km from Helsinki</span>
+            <span class="event-country">${gig.country}</span>
+          </div>
+          <h2 class="event-artist">${gig.artist}</h2>`;
+      if (gig.support) {
+        headerHTML += `<div class="event-support">${gig.support}</div>`;
+      }
+      headerHTML += `<div class="event-venue">${gig.venue}, ${gig.city}</div>
+        </div>`;
+
+      // Media
+      let mediaHTML = '<div class="event-media">';
+
+      // Images
+      gig.images.forEach(img => {
+        mediaHTML += `<img src="images/${img}.jpg" alt="${gig.artist}" loading="lazy" onclick="openLightbox(this.src)">`;
+      });
+
+      // Videos (YouTube poster thumbnails or upload-pending posters)
+      gig.videos.forEach(vid => {
+        let ytId = null;
+        if (vid.startsWith('yt:')) {
+          ytId = vid.substring(3);
+        } else {
+          ytId = YOUTUBE_IDS[vid];
+        }
+        if (ytId) {
+          mediaHTML += `<div class="video-poster" onclick="openVideoModal('${ytId}')">
+            <img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${gig.artist}" loading="lazy">
+            <div class="play-badge"></div>
+          </div>`;
+        } else {
+          mediaHTML += `<div class="video-poster" onclick="this.innerHTML='<div class=\\'video-container\\'><p style=\\'color:var(--text-muted);text-align:center;padding:40px\\'>Video uploading to YouTube...</p></div>'">
+            <img src="media/posters/${vid}.jpg" alt="${gig.artist}" loading="lazy">
+            <div class="play-badge"></div>
+            <span class="upload-pending">YouTube upload pending</span>
+          </div>`;
+        }
+      });
+
+      mediaHTML += '</div>';
+
+      // Body sections
+      let bodyHTML = `
+        <div class="event-body">
+          <div class="event-section">
+            <h3>The Experience</h3>
+            <p>${gig.experience}</p>
+          </div>
+          <div class="event-section">
+            <h3>The Venue</h3>
+            <p>${gig.venueInfo}</p>
+          </div>
+          <div class="event-section">
+            <h3>The Artist</h3>
+            <p>${gig.artistInfo}</p>
+          </div>
+        </div>`;
+
+      card.innerHTML = headerHTML + mediaHTML + bodyHTML;
+      timeline.appendChild(card);
+    });
+
+    // ═══════════════════════════════════════════
+    // LIGHTBOX
+    // ═══════════════════════════════════════════
+
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').classList.add('active');
+    }
+
+    // ═══════════════════════════════════════════
+    // VIDEO MODAL
+    // ═══════════════════════════════════════════
+
+    function openVideoModal(ytId) {
+      const inner = document.getElementById('video-modal-inner');
+      // Use YouTube oEmbed to get actual video dimensions, fallback to 16:9
+      const vw = window.innerWidth * 0.7;
+      const vh = window.innerHeight * 0.7;
+      // Default 16:9 ratio — fit within 70% of viewport
+      let w, h;
+      const ratio = 16 / 9;
+      if (vw / vh > ratio) {
+        h = vh;
+        w = h * ratio;
+      } else {
+        w = vw;
+        h = w / ratio;
+      }
+      inner.innerHTML = `<iframe width="${Math.round(w)}" height="${Math.round(h)}"
+        src="https://www.youtube.com/embed/${ytId}?autoplay=1" allowfullscreen
+        allow="autoplay; encrypted-media"></iframe>`;
+      document.getElementById('video-modal').classList.add('active');
+    }
+
+    function closeVideoModal() {
+      const modal = document.getElementById('video-modal');
+      modal.classList.remove('active');
+      document.getElementById('video-modal-inner').innerHTML = '';
+    }
+
+    // Close lightbox / video modal on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.getElementById('lightbox').classList.remove('active');
+        closeVideoModal();
+      }
+    });
+
+    // Enable scroll zoom after first interaction with map
+    map.once('click', () => map.scrollWheelZoom.enable());
+
+    // ═══════════════════════════════════════════
+    // FILTERS
+    // ═══════════════════════════════════════════
+
+    const filterYear = document.getElementById('filter-year');
+    const filterArtist = document.getElementById('filter-artist');
+    const filterCity = document.getElementById('filter-city');
+    const filterReset = document.getElementById('filter-reset');
+
+    // Populate dropdowns
+    const years = [...new Set(sortedGigs.map(g => g.date.split(' ')[2]))];
+    const allArtistNames = new Set();
+    sortedGigs.forEach(g => {
+      allArtistNames.add(g.artist);
+      if (g.support) {
+        g.support.split(/,\s*/).forEach(s => {
+          const name = s.replace(/\.\.\.$/, '').replace(/^—$/, '').trim();
+          if (name && name !== '—') allArtistNames.add(name);
+        });
+      }
+    });
+    const artists = [...allArtistNames].sort();
+    const cities = [...new Set(sortedGigs.map(g => g.city))].sort();
+
+    years.forEach(y => filterYear.add(new Option(y, y)));
+    artists.forEach(a => filterArtist.add(new Option(a, a)));
+    cities.forEach(c => filterCity.add(new Option(c, c)));
+
+    function applyFilters() {
+      const yVal = filterYear.value;
+      const aVal = filterArtist.value;
+      const cVal = filterCity.value;
+
+      filterYear.className = yVal ? 'active-filter' : '';
+      filterArtist.className = aVal ? 'active-filter' : '';
+      filterCity.className = cVal ? 'active-filter' : '';
+
+      let visibleCount = 0;
+      const visibleYears = new Set();
+
+      sortedGigs.forEach(gig => {
+        const card = document.getElementById(gig.id);
+        if (!card) return;
+        const year = gig.date.split(' ')[2];
+        const matchYear = !yVal || year === yVal;
+        const matchArtist = !aVal || gig.artist === aVal || (gig.support && gig.support.toLowerCase().includes(aVal.toLowerCase()));
+        const matchCity = !cVal || gig.city === cVal;
+
+        if (matchYear && matchArtist && matchCity) {
+          card.classList.remove('hidden');
+          visibleYears.add(year);
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      // Show/hide year headers
+      document.querySelectorAll('.timeline-year').forEach(el => {
+        el.classList.toggle('hidden', !visibleYears.has(el.textContent));
+      });
+
+      // Update count
+      let countEl = document.getElementById('filter-count');
+      if (!countEl) {
+        countEl = document.createElement('span');
+        countEl.id = 'filter-count';
+        countEl.className = 'filter-count';
+        document.getElementById('filters').appendChild(countEl);
+      }
+      const isFiltered = yVal || aVal || cVal;
+      countEl.textContent = isFiltered ? `${visibleCount} of ${sortedGigs.length} gigs` : '';
+    }
+
+    filterYear.addEventListener('change', applyFilters);
+    filterArtist.addEventListener('change', applyFilters);
+    filterCity.addEventListener('change', applyFilters);
+    filterReset.addEventListener('click', () => {
+      filterYear.value = '';
+      filterArtist.value = '';
+      filterCity.value = '';
+      applyFilters();
+    });
+  </script>
+</body>
+</html>
