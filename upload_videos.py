@@ -63,6 +63,16 @@ VIDEOS = [
     ("09 Nov 2024 01.mp4", "Fantastic Negrito", "Nalen Klubb", "Stockholm, Sweden", "9 Nov 2024"),
     ("07 Mar 2025 02.mp4", "Michael Kiwanuka", "Jahrhunderthalle", "Frankfurt, Germany", "7 Mar 2025"),
     ("07 Mar 2025 03.mp4", "Michael Kiwanuka", "Jahrhunderthalle", "Frankfurt, Germany", "7 Mar 2025"),
+    ("03 Jul 2026 02.mp4", "Alabama Shakes", "Alexandra Palace", "London, UK", "3 Jul 2026"),
+    ("03 Jul 2026 03.mp4", "Alabama Shakes", "Alexandra Palace", "London, UK", "3 Jul 2026"),
+    ("03 Jul 2026 04.mp4", "Alabama Shakes", "Alexandra Palace", "London, UK", "3 Jul 2026"),
+    ("04 Jul 2026 01.mp4", "BST Hyde Park 2026", "Hyde Park", "London, UK", "4 Jul 2026"),
+    ("04 Jul 2026 02.mp4", "BST Hyde Park 2026", "Hyde Park", "London, UK", "4 Jul 2026"),
+    ("04 Jul 2026 03.mp4", "BST Hyde Park 2026", "Hyde Park", "London, UK", "4 Jul 2026"),
+    ("04 Jul 2026 04.mp4", "BST Hyde Park 2026", "Hyde Park", "London, UK", "4 Jul 2026"),
+    ("04 Jul 2026 05.mp4", "BST Hyde Park 2026", "Hyde Park", "London, UK", "4 Jul 2026"),
+    ("05 Jul 2026 03.mp4", "Chris Isaak", "Theatre Royal Drury Lane", "London, UK", "5 Jul 2026"),
+    ("05 Jul 2026 04.mp4", "Chris Isaak", "Theatre Royal Drury Lane", "London, UK", "5 Jul 2026"),
 ]
 
 

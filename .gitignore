@@ -10,6 +10,7 @@ add-media/
 # Google API credentials and tokens
 credentials.json
 token.json
+token.json.stale-*
 
 # Python cache
 __pycache__/
